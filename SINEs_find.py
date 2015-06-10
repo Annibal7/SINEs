@@ -159,30 +159,35 @@ def needle(chrom, start, end, name, score, strand):
     if name == "MIRb":
         needle_cline = NeedleCommandline(asequence="asis:"+MIRb, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
         child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
+        child.wait()
         align = AlignIO.read(child.stdout, "emboss")
         n = char.search(str(align[1,:].seq)).end()
                     
     elif name == "MIRc":
         needle_cline = NeedleCommandline(asequence="asis:"+MIRc, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
         child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
+        child.wait()
         align = AlignIO.read(child.stdout, "emboss")
         n = char.search(str(align[1,:].seq)).end()
                     
     elif name == "MIR3":
         needle_cline = NeedleCommandline(asequence="asis:"+MIR3, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
         child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
+        child.wait()
         align = AlignIO.read(child.stdout, "emboss")
         n = char.search(str(align[1,:].seq)).end()
                     
     elif name == "MIR":
         needle_cline = NeedleCommandline(asequence="asis:"+MIR, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
         child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
+        child.wait()
         align = AlignIO.read(child.stdout, "emboss")
         n = char.search(str(align[1,:].seq)).end()
         
     elif "Alu" in name:
         needle_cline = NeedleCommandline(asequence="asis:"+ALU, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
         child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
+        child.wait()
         align = AlignIO.read(child.stdout, "emboss")
         n = char.search(str(align[1,:].seq)).end()
         
