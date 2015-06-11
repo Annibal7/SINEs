@@ -18,7 +18,7 @@ MIR = 'ACAGTATAGCATAGTGGTTAAGAGCACGGACTCTGGAGCCAGACTGCCTGGGTTCGAATCCCGGCTCTGCCAC
 MIRb = 'CAGAGGGGCAGCGTGGTGCAGTGGAAAGAGCACGGGCTTTGGAGTCAGGCAGACCTGGGTTCGAATCCTGGCTCTGCCACTTACTAGCTGTGTGACCTTGGGCAAGTCACTTAACCTCTCTGAGCCTCAGTTTCCTCATCTGTAAAATGGGGATAATAATACCTACCTCGCAGGGTTGTTGTGAGGATTAAATGAGATAATGCATGTAAAGCGCTTAGCACAGTGCCTGGCACACAGTAAGCGCTCAATAAATGGTAGCTCTATTATT'
 MIRc = 'CGAGGCAGTGTGGTGCAGTGGAAAGAGCACTGGACTTGGAGTCAGGAAGACCTGGGTTCGAGTCCTGGCTCTGCCACTTACTAGCTGTGTGACCTTGGGCAAGTCACTTAACCTCTCTGAGCCTCAGTTTCCTCATCTGTAAAATGGGGATAATAATACCTGCCCTGCCTACCTCACAGGGTTGTTGTGAGGATCAAATGAGATAATGTATGTGAAAGCGCTTTGTAAACTGTAAAGTGCTATACAAATGTAAGGGGTTATTATTATT'
 MIR3 = 'TTCTGGAAGCAGTATGGTATAGTGGAAAGAACAACTGGACTAGGAGTCAGGAGACCTGGGTTCTAGTCCTAGCTCTGCCACTAACTAGCTGTGTGACCTTGGGCAAGTCACTTCACCTCTCTGGGCCTCAGTTTTCCTCATCTGTAAAATGAGNGGGTTGGACTAGATGATCTCTAAGGTCCCTTCCAGCTCTAACATTCTATGATTCTATGATTCTAAAAAAA'
-ALU = 'GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGAGGATTGCTTGAGCCCAGGAGTTCGAGACCAGCCTGGGCAACATAGCGAGACCCCGTCTCTACAAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAGTCCCAGCTACTCGGGAGGCTGAGGCAGGAGGATCGCTTGAGCCCAGGAGTTCGAGGCTGCAGTGAGCTATGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACCCTGTCTCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+ALU = 'GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGAGGATTGCTTGAGCCCAGGAGTTCGAGACCAGCCTGGGCAACATAGCGAGACCCCGTCTCTACAAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAGTCCCAGCTACTCGGGAGGCTGAGGCAGGAGGATCGCTTGAGCCCAGGAGTTCGAGGCTGCAGTGAGCTATGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACCCTGTCTCA'
 
 start_time = time.time()
 annotation = HTSeq.GFF_Reader(args.gtf)
@@ -82,14 +82,15 @@ def frf_stranded(gtf):
         if element.iv.strand == '+':
             if max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
-                    n = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
+                    n, sine_length = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
-                    central = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n), (element.iv.start -n + 269))]))
-                    right = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 269), (element.iv.start -n + 469 ))]))
-                    right_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 269), (element.iv.start -n + 469 ))]))
-                    left = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n+100)), (element.iv.start -n))]))
-                    left_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n+100)), (element.iv.start -n))]))
-                    out = (sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 469), (element.iv.start -n +569))])))
+                    central = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n), (element.iv.start - n + sine_length))]))
+                    right = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + sine_length), (element.iv.start - n + (sine_length + 200) ))]))
+                    right_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + sine_length), (element.iv.start -n + (sine_length + 200) ))]))
+                    left = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n + 100)), (element.iv.start - n))]))
+                    left_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n + 100)), (element.iv.start - n))]))
+                    out = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + (sine_length + 200)), (element.iv.start - n + (sine_length + 300)))]))
+                    out_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + (sine_length + 200)), (element.iv.start - n + (sine_length + 300)))]))
                 else:
                     continue
                 
@@ -99,22 +100,23 @@ def frf_stranded(gtf):
         elif element.iv.strand == '-':
             if max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
-                    n = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
+                    n, sine_length = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
-                    central = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n -269), (element.iv.end +n))]))
-                    right = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 469), (element.iv.end +n - 269 ))]))
-                    right_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 469), (element.iv.end +n - 269 ))]))
-                    left = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n), (element.iv.end +n +100))]))
-                    left_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n), (element.iv.end +n +100))]))
-                    out = (sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 569), (element.iv.end +n -469))])))
+                    central = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - sine_length), (element.iv.end + n))]))
+                    right = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - (sine_length + 200)), (element.iv.end + n - sine_length ))]))
+                    right_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - (sine_length + 200)), (element.iv.end +n - sine_length ))]))
+                    left = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n), (element.iv.end + n + 100))]))
+                    left_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n), (element.iv.end + n + 100))]))
+                    out = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - (sine_length + 300)), (element.iv.end + n - (sine_length + 200)))]))
+                    out_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - (sine_length + 300)), (element.iv.end + n - (sine_length + 200)))]))
                 else:
                     continue
                 
             else:
                 continue
     
-        if left < central / 10 and right < central and out < central / 10:
-            alu_list.append([n, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, left_max, max_coverage, right_max, out])
+        if left_max < args.peak and right < central and out < args.peak:
+            alu_list.append([n, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
     
 def frf_unstranded(gtf):
     for element in gtf:
@@ -122,14 +124,15 @@ def frf_unstranded(gtf):
             if max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
-                    n = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
+                    n, sine_length = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
-                    central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n), (element.iv.start -n + 269))]))
-                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 269), (element.iv.start -n + 469 ))]))
-                    right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 269), (element.iv.start -n + 469 ))]))
-                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n+100)), (element.iv.start -n))]))
-                    left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n+100)), (element.iv.start -n))]))
-                    out = (sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 469), (element.iv.start -n +569))])))
+                    central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n), (element.iv.start - n + sine_length))]))
+                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + sine_length), (element.iv.start - n + (sine_length + 200) ))]))
+                    right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + sine_length), (element.iv.start - n + (sine_length + 200) ))]))
+                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - (n + 100)), (element.iv.start - n))]))
+                    left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n + 100)), (element.iv.start - n))]))
+                    out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + (sine_length + 200)), (element.iv.start - n +(sine_length + 300)))]))
+                    out_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + (sine_length + 200)), (element.iv.start - n +(sine_length + 300)))]))
             
                 else:
                     continue                    
@@ -139,21 +142,22 @@ def frf_unstranded(gtf):
         elif element.iv.strand == '-':
             if max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
-                    n = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
+                    n, sine_length = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
-                    central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n -269), (element.iv.end +n))]))
-                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 469), (element.iv.end +n - 269 ))]))
-                    right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 469), (element.iv.end +n - 269 ))]))
-                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n), (element.iv.end +n +100))]))
-                    left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n), (element.iv.end +n +100))]))
-                    out = (sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 569), (element.iv.end +n -469))])))
+                    central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n -sine_length), (element.iv.end + n))]))
+                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - (sine_length + 200)), (element.iv.end + n - sine_length ))]))
+                    right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - (sine_length + 200)), (element.iv.end + n - sine_length ))]))
+                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n), (element.iv.end + n + 100))]))
+                    left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n), (element.iv.end + n + 100))]))
+                    out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - (sine_length + 300)), (element.iv.end + n - (sine_length + 200)))]))
+                    out = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - (sine_length + 300)), (element.iv.end + n - (sine_length + 200)))]))
                 else:
                     continue
             else:
                 continue
                 
-        if left < central / 10  and right < central and out < central / 10:
-            alu_list.append([element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, left_max, max_coverage, right_max])
+        if left_max < args.peak and right < central and out < args.peak:
+            alu_list.append(n, [element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
 
 # Perform global alignment, with Needle algorithm, of the element to its consensus sequence to define the start/end of the central region
         
@@ -163,6 +167,7 @@ def needle(chrom, start, end, name, score, strand):
     item = item.sequence(fi=genome, s=True)
     temp = open(item.seqfn).read().split('\n')[1]
     if name == "MIRb":
+        sine_length = 269
         needle_cline = NeedleCommandline(asequence="asis:"+MIRb, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
         child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
         child.wait()
@@ -170,6 +175,7 @@ def needle(chrom, start, end, name, score, strand):
         n = char.search(str(align[1,:].seq)).end()
                     
     elif name == "MIRc":
+        sine_length = 269
         needle_cline = NeedleCommandline(asequence="asis:"+MIRc, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
         child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
         child.wait()
@@ -177,6 +183,7 @@ def needle(chrom, start, end, name, score, strand):
         n = char.search(str(align[1,:].seq)).end()
                     
     elif name == "MIR3":
+        sine_length = 225
         needle_cline = NeedleCommandline(asequence="asis:"+MIR3, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
         child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
         child.wait()
@@ -184,6 +191,7 @@ def needle(chrom, start, end, name, score, strand):
         n = char.search(str(align[1,:].seq)).end()
                     
     elif name == "MIR":
+        sine_length = 261
         needle_cline = NeedleCommandline(asequence="asis:"+MIR, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
         child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
         child.wait()
@@ -191,13 +199,14 @@ def needle(chrom, start, end, name, score, strand):
         n = char.search(str(align[1,:].seq)).end()
         
     elif "Alu" in name:
+        sine_length = 284
         needle_cline = NeedleCommandline(asequence="asis:"+ALU, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
         child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
         child.wait()
         align = AlignIO.read(child.stdout, "emboss")
         n = char.search(str(align[1,:].seq)).end()
         
-    return n        
+    return (n, sine_length) 
             
 # Check srguments and call specific functions
 
