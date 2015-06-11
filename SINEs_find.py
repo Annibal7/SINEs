@@ -115,7 +115,7 @@ def frf_stranded(gtf):
             else:
                 continue
     
-        if left_max < args.peak and right < central and out < args.peak:
+        if left_max < args.peak and right < central and out_max < args.peak:
             alu_list.append([n, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
     
 def frf_unstranded(gtf):
@@ -156,7 +156,7 @@ def frf_unstranded(gtf):
             else:
                 continue
                 
-        if left_max < args.peak and right < central and out < args.peak:
+        if left_max < args.peak and right < central and out_max < args.peak:
             alu_list.append(n, [element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
 
 # Perform global alignment, with Needle algorithm, of the element to its consensus sequence to define the start/end of the central region
