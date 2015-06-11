@@ -113,40 +113,46 @@ def frf_stranded(gtf):
             else:
                 continue
     
-        if left < central / 10 and right < central / 2 and out < right / 10:
-            alu_list.append([n, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, left_max, max_coverage, right_max])
+        if left < central / 10 and right < central and out < central / 10:
+            alu_list.append([n, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, left_max, max_coverage, right_max, out])
     
 def frf_unstranded(gtf):
     for element in gtf:
         if element.iv.strand == '+':
             if max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
-                max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
-                n = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['transcript_id'], element.score, element.iv.strand)
-                max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
-                central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n), (element.iv.start -n + 269))]))
-                right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 269), (element.iv.start -n + 469 ))]))
-                right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 269), (element.iv.start -n + 469 ))]))
-                left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n+100)), (element.iv.start -n))]))
-                left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n+100)), (element.iv.start -n))]))
-                out = (sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 469), (element.iv.start -n +569))])))
+                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
+                    max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
+                    n = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
+                    max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
+                    central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n), (element.iv.start -n + 269))]))
+                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 269), (element.iv.start -n + 469 ))]))
+                    right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 269), (element.iv.start -n + 469 ))]))
+                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n+100)), (element.iv.start -n))]))
+                    left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n+100)), (element.iv.start -n))]))
+                    out = (sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -n + 469), (element.iv.start -n +569))])))
             
+                else:
+                    continue                    
             else:
                 continue
         
         elif element.iv.strand == '-':
             if max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
-                n = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['transcript_id'], element.score, element.iv.strand)
-                max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
-                central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n -269), (element.iv.end +n))]))
-                right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 469), (element.iv.end +n - 269 ))]))
-                right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 469), (element.iv.end +n - 269 ))]))
-                left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n), (element.iv.end +n +100))]))
-                left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n), (element.iv.end +n +100))]))
-                out = (sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 569), (element.iv.end +n -469))])))
+                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
+                    n = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
+                    max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
+                    central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n -269), (element.iv.end +n))]))
+                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 469), (element.iv.end +n - 269 ))]))
+                    right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 469), (element.iv.end +n - 269 ))]))
+                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n), (element.iv.end +n +100))]))
+                    left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n), (element.iv.end +n +100))]))
+                    out = (sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end +n - 569), (element.iv.end +n -469))])))
+                else:
+                    continue
             else:
                 continue
                 
-        if left < central / 10 and right < central / 2 and out < right / 10:
+        if left < central / 10  and right < central and out < central / 10:
             alu_list.append([element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, left_max, max_coverage, right_max])
 
 # Perform global alignment, with Needle algorithm, of the element to its consensus sequence to define the start/end of the central region
