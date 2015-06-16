@@ -29,7 +29,7 @@ left = 0
 central = 0
 right = 0
 alu_list = []
-char = re.compile('-+')
+char = re.compile('-*')
 
 # Build the coverage vectors for + and - strand based on XS tag, using uniquely mapped reads
 
