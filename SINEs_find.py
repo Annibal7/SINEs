@@ -150,7 +150,7 @@ def frf_unstranded(gtf):
                     left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n + 20), (element.iv.end + n + 100))]))
                     left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n + 20), (element.iv.end + n + 100))]))
                     out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - (sine_length + 300)), (element.iv.end + n - (sine_length + 200)))]))
-                    out = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - (sine_length + 300)), (element.iv.end + n - (sine_length + 200)))]))
+                    out_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - (sine_length + 300)), (element.iv.end + n - (sine_length + 200)))]))
                 else:
                     continue
             else:
