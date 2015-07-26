@@ -123,7 +123,6 @@ def frf_unstranded(gtf):
         if element.iv.strand == '+':
             if max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
-                    max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
                     n, sine_length = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
                     central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n), (element.iv.start - n + sine_length))]))
