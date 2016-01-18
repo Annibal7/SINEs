@@ -207,7 +207,7 @@ def needle(chrom, start, end, name, score, strand):
         aln_start = char.search(str(align[1,:].seq)).end()
         aln_end = char2.search(str(align[1,:].seq)).end()
         
-    return (aln_start, end) 
+    return (aln_start, aln_end) 
             
 # Check srguments and call specific functions
 
