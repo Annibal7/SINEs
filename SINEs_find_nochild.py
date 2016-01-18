@@ -18,10 +18,7 @@ MIR = 'ACAGTATAGCATAGTGGTTAAGAGCACGGACTCTGGAGCCAGACTGCCTGGGTTCGAATCCCGGCTCTGCCAC
 MIRb = 'CAGAGGGGCAGCGTGGTGCAGTGGAAAGAGCACGGGCTTTGGAGTCAGGCAGACCTGGGTTCGAATCCTGGCTCTGCCACTTACTAGCTGTGTGACCTTGGGCAAGTCACTTAACCTCTCTGAGCCTCAGTTTCCTCATCTGTAAAATGGGGATAATAATACCTACCTCGCAGGGTTGTTGTGAGGATTAAATGAGATAATGCATGTAAAGCGCTTAGCACAGTGCCTGGCACACAGTAAGCGCTCAATAAATGGTAGCTCTATTATT'
 MIRc = 'CGAGGCAGTGTGGTGCAGTGGAAAGAGCACTGGACTTGGAGTCAGGAAGACCTGGGTTCGAGTCCTGGCTCTGCCACTTACTAGCTGTGTGACCTTGGGCAAGTCACTTAACCTCTCTGAGCCTCAGTTTCCTCATCTGTAAAATGGGGATAATAATACCTGCCCTGCCTACCTCACAGGGTTGTTGTGAGGATCAAATGAGATAATGTATGTGAAAGCGCTTTGTAAACTGTAAAGTGCTATACAAATGTAAGGGGTTATTATTATT'
 MIR3 = 'TTCTGGAAGCAGTATGGTATAGTGGAAAGAACAACTGGACTAGGAGTCAGGAGACCTGGGTTCTAGTCCTAGCTCTGCCACTAACTAGCTGTGTGACCTTGGGCAAGTCACTTCACCTCTCTGGGCCTCAGTTTTCCTCATCTGTAAAATGAGNGGGTTGGACTAGATGATCTCTAAGGTCCCTTCCAGCTCTAACATTCTATGATTCTATGATTCTAAAAAAA'
-ALU = 'GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGAGGATTGCTTGAGCCCAGGAGTTCGAGACCAGCCTGGGCAACATAGCGAGACCCCGTCTCTACAAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAGTCCCAGCTACTCGGGAGGCTGAGGCAGGAGGATCGCTTGAGCCCAGGAGTTCGAGGCTGCAGTGAGCTATGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACCCTGTCTCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-FAM = 'GCCGGGCGCGGTGGCGCGCGCCTGTAGTCCCAGCTACTCGGGAGGCTGAGGCGGGAGGATCGCTTGAGCCCAGGAGTTCGAGGCTGTAGTGCGCTATGATCGCGCCTGTGAATAGCCACTGCACTCCAGCCTGAGCAACATAGCGAGACCCCGTCTCTTAAAAAAAAA'
-FLAM = 'GCCGGGCGCGGTGGCGCGCGCCTGTAGTCCCAGCTACTCGGGAGGCTGAGGCGGGAGGATCGCTTGAGCCCAGGAGTTCGAGACCAGCCTGGGCAACATAGCGAGACCCCGTCTCTAAAAAAAA'
-FRAM = 'GCCGGGCGCGGTGGCGCGCGCCTGTAGTCCCAGCTACTCGGGAGGCTGAGGCGGGAGGATCGCTTGAGCCCAGGAGTTCGAGGCTGCAGTGAGCTATGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACCCCGTCTCAAAAAAAAAA'
+ALU = 'GGCCGGGCGCGGTGGCTCACGCCTGTAATCCCAGCACTTTGGGAGGCCGAGGCGGGAGGATTGCTTGAGCCCAGGAGTTCGAGACCAGCCTGGGCAACATAGCGAGACCCCGTCTCTACAAAAAATACAAAAATTAGCCGGGCGTGGTGGCGCGCGCCTGTAGTCCCAGCTACTCGGGAGGCTGAGGCAGGAGGATCGCTTGAGCCCAGGAGTTCGAGGCTGCAGTGAGCTATGATCGCGCCACTGCACTCCAGCCTGGGCGACAGAGCGAGACCCTGTCTCA'
 
 start_time = time.time()
 annotation = HTSeq.GFF_Reader(args.gtf)
@@ -33,7 +30,6 @@ central = 0
 right = 0
 alu_list = []
 char = re.compile('-*')
-char2 = re.compile('[-ATGC]*')
 
 # Build the coverage vectors for + and - strand based on XS tag, using uniquely mapped reads
 
@@ -85,7 +81,7 @@ def frf_stranded(gtf):
     for element in gtf:
         if element.iv.strand == '+':
             if max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
-                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id'] or "FAM" in element.attr['gene_id'] or "FLAM" in element.attr['gene_id'] or or "FRAM" in element.attr['gene_id']:
+                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     n, sine_length = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
                     central = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n), (element.iv.start - n + sine_length))]))
@@ -103,7 +99,7 @@ def frf_stranded(gtf):
             
         elif element.iv.strand == '-':
             if max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
-                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id'] or "FAM" in element.attr['gene_id'] or "FLAM" in element.attr['gene_id'] or or "FRAM" in element.attr['gene_id']:
+                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     n, sine_length = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
                     central = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n - sine_length), (element.iv.end + n))]))
@@ -120,13 +116,13 @@ def frf_stranded(gtf):
                 continue
     
         if left_max < args.peak and left_max < max_coverage / 5 and right < central and out_max < args.peak:
-            alu_list.append([n, end, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
+            alu_list.append([n, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
     
 def frf_unstranded(gtf):
     for element in gtf:
         if element.iv.strand == '+':
             if max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
-                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id'] or "FAM" in element.attr['gene_id'] or "FLAM" in element.attr['gene_id'] or or "FRAM" in element.attr['gene_id']:
+                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     n, sine_length = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
                     central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n), (element.iv.start - n + sine_length))]))
@@ -134,7 +130,7 @@ def frf_unstranded(gtf):
                     right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + sine_length), (element.iv.start - n + (sine_length + 200) ))]))
                     left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - (n + 100)), (element.iv.start - (n + 20)))]))
                     left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(n + 100)), (element.iv.start - (n + 20)))]))
-                    out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + (sine_length + 200)), (element.iv.start - n +(sine_length + 300)))]))
+                    out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + (sine_length + 200)), (element.iv.start - n + (sine_length + 300)))]))
                     out_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - n + (sine_length + 200)), (element.iv.start - n +(sine_length + 300)))]))
             
                 else:
@@ -144,7 +140,7 @@ def frf_unstranded(gtf):
         
         elif element.iv.strand == '-':
             if max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak:
-                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id'] or "FAM" in element.attr['gene_id'] or "FLAM" in element.attr['gene_id'] or or "FRAM" in element.attr['gene_id']:
+                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     n, sine_length = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
                     central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + n -sine_length), (element.iv.end + n))]))
@@ -160,7 +156,7 @@ def frf_unstranded(gtf):
                 continue
                 
         if left_max < args.peak and left_max < max_coverage / 5 and right < central and out_max < args.peak:
-            alu_list.append([n, end, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
+            alu_list.append([n, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
 
 # Perform global alignment, with Needle algorithm, of the element to its consensus sequence to define the start/end of the central region
         
@@ -171,48 +167,38 @@ def needle(chrom, start, end, name, score, strand):
     temp = open(item.seqfn).read().split('\n')[1]
     if name == "MIRb":
         sine_length = 269
-        needle_cline = NeedleCommandline(asequence="asis:"+MIRb, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
-        child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
-        child.wait()
-        align = AlignIO.read(child.stdout, "emboss")
+        needle_cline = NeedleCommandline(asequence="asis:"+MIRb, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile="needle.txt"+args.output)
+        stdout, stderr = needle_cline()
+        align = AlignIO.read("needle.txt"+args.output, "emboss")
         n = char.search(str(align[1,:].seq)).end()
-        end = char2.search(str(align[1,:].seq)).end()
                     
     elif name == "MIRc":
         sine_length = 269
-        needle_cline = NeedleCommandline(asequence="asis:"+MIRc, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
-        child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
-        child.wait()
-        align = AlignIO.read(child.stdout, "emboss")
+        needle_cline = NeedleCommandline(asequence="asis:"+MIRc, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile="needle.txt"+args.output)
+        stdout, stderr = needle_cline()
+        align = AlignIO.read("needle.txt"+args.output, "emboss")
         n = char.search(str(align[1,:].seq)).end()
-        end = char2.search(str(align[1,:].seq)).end()
                     
     elif name == "MIR3":
         sine_length = 225
-        needle_cline = NeedleCommandline(asequence="asis:"+MIR3, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
-        child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
-        child.wait()
-        align = AlignIO.read(child.stdout, "emboss")
+        needle_cline = NeedleCommandline(asequence="asis:"+MIR3, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile="needle.txt"+args.output)
+        stdout, stderr = needle_cline()
+        align = AlignIO.read("needle.txt"+args.output, "emboss")
         n = char.search(str(align[1,:].seq)).end()
-        end = char2.search(str(align[1,:].seq)).end()
                     
     elif name == "MIR":
         sine_length = 261
-        needle_cline = NeedleCommandline(asequence="asis:"+MIR, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
-        child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
-        child.wait()
-        align = AlignIO.read(child.stdout, "emboss")
+        needle_cline = NeedleCommandline(asequence="asis:"+MIR, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile="needle.txt"+args.output)
+        stdout, stderr = needle_cline()
+        align = AlignIO.read("needle.txt"+args.output, "emboss")
         n = char.search(str(align[1,:].seq)).end()
-        end = char2.search(str(align[1,:].seq)).end()
         
     elif "Alu" in name:
-        sine_length = 313
-        needle_cline = NeedleCommandline(asequence="asis:"+ALU, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile='stdout')
-        child = subprocess.Popen(str(needle_cline), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=(sys.platform!="win32"))
-        child.wait()
-        align = AlignIO.read(child.stdout, "emboss")
+        sine_length = 284
+        needle_cline = NeedleCommandline(asequence="asis:"+ALU, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile="needle.txt"+args.output)
+        stdout, stderr = needle_cline()
+        align = AlignIO.read("needle.txt"+args.output, "emboss")
         n = char.search(str(align[1,:].seq)).end()
-        end = char2.search(str(align[1,:].seq)).end()
         
     return (n, sine_length) 
             
