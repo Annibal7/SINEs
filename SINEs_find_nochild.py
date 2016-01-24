@@ -166,7 +166,7 @@ def needle(chrom, start, end, name, score, strand):
     aln_end= 0
     item=BedTool([(chrom, start, end, name, score, strand)])
     item = item.sequence(fi=genome, s=True)
-    temp = open(item.seqfn).read().split('\n')[1]
+    temp = open(item.seqfn).read().split('\n')[1].upper()
     if name == "MIRb":
         sine_length = 269
         needle_cline = NeedleCommandline(asequence="asis:"+MIRb, bsequence="asis:"+temp,gapopen=10, gapextend=0.5, outfile="needle.txt"+args.output)
