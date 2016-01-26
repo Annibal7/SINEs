@@ -6,7 +6,7 @@ from pybedtools import BedTool
 parser = argparse.ArgumentParser(description='This script takes a coverage file in BAM or BEDGRAPH format and an annotation file of SINEs in GTF format to find genuine SINE transcripts. Version 2.1 January 2016', epilog='Written by Davide Carnevali davide.carnevali@nemo.unipr.it')
 parser.add_argument("-s", "--stranded", help="Use this option if using a stranded coverage file(s). If using bam file make sure it is generated with TopHat as this program use the 'XS' tag to identify the strand of the transcript from which the reads come from", action="store_true")
 parser.add_argument("-t", "--filetype", choices=['bam', 'bg'], help="specify coverage file type: default 'bam'.  Bedgraph stranded files should be comma separated, with plus signal preceding the minus one", default='bam')
-parser.add_argument("-p", "--peak", type= int, help="Set the minimum coverage signal for the SINE to be considered. Default: 10", default='10')
+#parser.add_argument("-p", "--peak", type= int, help="Set the minimum coverage signal for the SINE to be considered. Default: 10", default='10')
 parser.add_argument("coverage", help="Coverage file to be processed, either in BAM or BEDGRAPH format. Using BEDGRAPH files the script run much faster (x10). If using BEDGRAPH make sure the coverage is made up only of uniquely mapped reads")
 parser.add_argument("gtf", help="annotation file in GFF/GTF format")
 parser.add_argument("genome", help="reference genome in fasta format")
@@ -130,7 +130,7 @@ def frf_stranded(gtf, peak):
             else:
                 continue
                 
-        if left < (200 * peak) and left < (central/aln_end)*100 and right < (central/aln_end)*200 and out < (200*args.peak) and out < (central/aln_end)*100:
+        if left < (200 * peak) and left < (central/aln_end)*100 and right < (central/aln_end)*200 and out < (200*peak) and out < (central/aln_end)*100:
             alu_list.append([peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
                 
 
@@ -172,7 +172,7 @@ def frf_unstranded(gtf,peak):
             else:
                 continue
                 
-        if left < (200 * peak) and left < (central/aln_end)*100 and right < (central/aln_end)*200 and out < (200*args.peak) and out < (central/aln_end)*100:
+        if left < (200 * peak) and left < (central/aln_end)*100 and right < (central/aln_end)*200 and out < (200*peak) and out < (central/aln_end)*100:
             alu_list.append([peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
 
 # Perform global alignment, with Needle algorithm, of the element to its consensus sequence to define the start/end of the central region
