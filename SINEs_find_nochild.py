@@ -30,6 +30,7 @@ central = 0
 right = 0
 count_plus = 0
 count_minus = 0
+count = 0
 alu_list = []
 char = re.compile('-*')
 char2 = re.compile('[-ATGC]*')
