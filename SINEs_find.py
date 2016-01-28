@@ -46,12 +46,12 @@ def cvg_bam(file):
                 for cigopt in read.cigar:
                     if cigopt.type == 'M':
                         cvg_plus[cigopt.ref_iv] += 1
-                        count_plus += cigoption.length
+                        count_plus += cigopt.ref_iv.length
             elif read.optional_field('XS') == '-':
                 for cigopt in read.cigar:
                     if cigopt.type == 'M':
                         cvg_minus[cigopt.ref_iv] += 1
-                        count_minus += cigoption.length
+                        count_minus += cigopt.ref_iv.length
     return (cvg_plus, cvg_minus, count_plus, count_minus)
 
 def cvg_bam_unstranded(file):
@@ -61,7 +61,7 @@ def cvg_bam_unstranded(file):
             for cigopt in read.cigar:
                 if cigopt.type == 'M':
                     cvg[cigopt.ref_iv] += 1
-                    count += cigoption.length
+                    count += cigopt.ref_iv.length
     return (cvg, count)
  
 
