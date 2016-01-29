@@ -3,10 +3,13 @@ from Bio.Emboss.Applications import NeedleCommandline
 from Bio import AlignIO
 from pybedtools import BedTool
 
-parser = argparse.ArgumentParser(description='This script takes a coverage file in BAM or BEDGRAPH format and an annotation file of SINEs in GTF format to find genuine SINE transcripts. Version 2.1 January 2016', epilog='Written by Davide Carnevali davide.carnevali@nemo.unipr.it')
+parser = argparse.ArgumentParser(description='This script takes a coverage file in BAM or BEDGRAPH format and an annotation file of SINEs in GTF format to find genuine SINE transcripts. Version 2.1.3 January 2016', epilog='Written by Davide Carnevali davide.carnevali@nemo.unipr.it')
 parser.add_argument("-s", "--stranded", help="Use this option if using a stranded coverage file(s). If using bam file make sure it is generated with TopHat as this program use the 'XS' tag to identify the strand of the transcript from which the reads come from", action="store_true")
 parser.add_argument("-t", "--filetype", choices=['bam', 'bg'], help="specify coverage file type: default 'bam'.  Bedgraph stranded files should be comma separated, with plus signal preceding the minus one", default='bam')
-#parser.add_argument("-p", "--peak", type= int, help="Set the minimum coverage signal for the SINE to be considered. Default: 10", default='10')
+parser.add_argument("-p", "--peak", type= int, help="Set how many times the SINE area coverage should be greater than background . Default: 1", default='1')
+parser.add_argument("-LR", "--left_region", type = int, help = "Set the region size in nt", default='100')
+parser.add_argument("-RR", "--right_region", type = int, help = "Set the region size in nt", default='200')
+parser.add_argument("-OR", "--out_region", type = int, help = "Set the region size in nt", default='100')
 parser.add_argument("coverage", help="Coverage file to be processed, either in BAM or BEDGRAPH format. Using BEDGRAPH files the script run much faster (x10). If using BEDGRAPH make sure the coverage is made up only of uniquely mapped reads")
 parser.add_argument("gtf", help="annotation file in GFF/GTF format")
 parser.add_argument("genome", help="reference genome in fasta format")
@@ -96,17 +99,17 @@ def cvg_bedgraph_unstranded(file):
 def frf_stranded(gtf, peak):
     for element in gtf:
         if element.iv.strand == '+':
-            if sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > ((element.iv.end - element.iv.start) * peak):
+            if sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak * ((element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
                     central = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start), (element.iv.start - aln_start + aln_end))]))
-                    right = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + aln_end), (element.iv.start - aln_start + (aln_end + 200) ))]))
-                    right_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + aln_end), (element.iv.start -aln_start + (aln_end + 200) ))]))
-                    left = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(aln_start + 200)), (element.iv.start - aln_start))]))
-                    left_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(aln_start + 200)), (element.iv.start - aln_start))]))
-                    out = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + (aln_end + 200)), (element.iv.start - aln_start + (aln_end + 400)))]))
-                    out_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + (aln_end + 200)), (element.iv.start - aln_start + (aln_end + 400)))]))
+                    right = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + aln_end), (element.iv.start - aln_start + (aln_end + args.right_region) ))]))
+                    right_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + aln_end), (element.iv.start -aln_start + (aln_end + args.right_region) ))]))
+                    left = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(aln_start + args.left_region)), (element.iv.start - aln_start))]))
+                    left_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(aln_start + args.left_region)), (element.iv.start - aln_start))]))
+                    out = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + (aln_end + args.right_region)), (element.iv.start - aln_start + (aln_end + args.right_region + args.out_region)))]))
+                    out_max = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + (aln_end + args.right_region)), (element.iv.start - aln_start + (aln_end + args.right_region + args.out_region)))]))
                     
                 else:
                     continue                    
@@ -119,19 +122,19 @@ def frf_stranded(gtf, peak):
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
                     central = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - aln_end), (element.iv.end + aln_start))]))
-                    right = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + 200)), (element.iv.end + aln_start - aln_end ))]))
-                    right_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + 200)), (element.iv.end +aln_start - aln_end ))]))
-                    left = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start), (element.iv.end + aln_start + 200))]))
-                    left_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start), (element.iv.end + aln_start + 200))]))
-                    out = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + 400)), (element.iv.end + aln_start - (aln_end + 200)))]))
-                    out_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + 400)), (element.iv.end + aln_start - (aln_end + 200)))]))
+                    right = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + args.right_region)), (element.iv.end + aln_start - aln_end ))]))
+                    right_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + args.right_region)), (element.iv.end +aln_start - aln_end ))]))
+                    left = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start), (element.iv.end + aln_start + args.left_region))]))
+                    left_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start), (element.iv.end + aln_start + args.left_region))]))
+                    out = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + args.right_region + args.out_region)), (element.iv.end + aln_start - (aln_end + args.out_region)))]))
+                    out_max = max(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + args.right_region + args.out_region)), (element.iv.end + aln_start - (aln_end + args.out_region)))]))
                     
                 else:
                     continue                    
             else:
                 continue
                 
-        if left < (200 * peak) and left < (central/aln_end)*100 and right < (central/aln_end)*200 and out < (200*peak) and out < (central/aln_end)*100:
+        if left < (args.left_region * peak) and left < (central/aln_end)*args.left_region/2 and right < (central/aln_end)*args.right_region and out < (args.out_region*peak) and out < (central/aln_end)*args.out_region/2:
             alu_list.append([peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
                 
 
@@ -139,41 +142,42 @@ def frf_stranded(gtf, peak):
 def frf_unstranded(gtf,peak):
     for element in gtf:
         if element.iv.strand == '+':
-            if sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > ((element.iv.end - element.iv.start) * peak):
+            if sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak * ((element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
                     central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start), (element.iv.start - aln_start + aln_end))]))
-                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + aln_end), (element.iv.start - aln_start + (aln_end + 200) ))]))
-                    right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + aln_end), (element.iv.start - aln_start + (aln_end + 200) ))]))
-                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - (aln_start + 100)), (element.iv.start - aln_start))]))
-                    left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(aln_start + 100)), (element.iv.start - aln_start))]))
-                    out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + (aln_end + 200)), (element.iv.start - aln_start + (aln_end + 300)))]))
-                    out_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + (aln_end + 200)), (element.iv.start - aln_start +(aln_end + 300)))]))
-            
+                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + aln_end), (element.iv.start - aln_start + (aln_end + args.right_region) ))]))
+                    right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + aln_end), (element.iv.start -aln_start + (aln_end + args.right_region) ))]))
+                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(aln_start + args.left_region)), (element.iv.start - aln_start))]))
+                    left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start -(aln_start + args.left_region)), (element.iv.start - aln_start))]))
+                    out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + (aln_end + args.right_region)), (element.iv.start - aln_start + (aln_end + args.right_region + args.out_region)))]))
+                    out_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start + (aln_end + args.right_region)), (element.iv.start - aln_start + (aln_end + args.right_region + args.out_region)))]))
+                    
                 else:
                     continue                    
             else:
                 continue
-        
+                    
         elif element.iv.strand == '-':
             if sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > ((element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
-                    central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start -aln_end), (element.iv.end + aln_start))]))
-                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + 200)), (element.iv.end + aln_start - aln_end ))]))
-                    right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + 200)), (element.iv.end + aln_start - aln_end ))]))
-                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start), (element.iv.end + aln_start + 100))]))
-                    left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start), (element.iv.end + aln_start + 100))]))
-                    out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + 300)), (element.iv.end + aln_start - (aln_end + 200)))]))
-                    out_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + 300)), (element.iv.end + aln_start - (aln_end + 200)))]))
+                    central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - aln_end), (element.iv.end + aln_start))]))
+                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + args.right_region)), (element.iv.end + aln_start - aln_end ))]))
+                    right_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + args.right_region)), (element.iv.end +aln_start - aln_end ))]))
+                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start), (element.iv.end + aln_start + args.left_region))]))
+                    left_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start), (element.iv.end + aln_start + args.left_region))]))
+                    out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + args.right_region + args.out_region)), (element.iv.end + aln_start - (aln_end + args.out_region)))]))
+                    out_max = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - (aln_end + args.right_region + args.out_region)), (element.iv.end + aln_start - (aln_end + args.out_region)))]))
+                    
                 else:
-                    continue
+                    continue                    
             else:
                 continue
                 
-        if left < (200 * peak) and left < (central/aln_end)*100 and right < (central/aln_end)*200 and out < (200*peak) and out < (central/aln_end)*100:
+        if left < (args.left_region * peak) and left < (central/aln_end)*args.left_region/2 and right < (central/aln_end)*args.right_region and out < (args.out_region*peak) and out < (central/aln_end)*args.out_region/2:
             alu_list.append([peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
 
 # Perform global alignment, with Needle algorithm, of the element to its consensus sequence to define the start/end of the central region
@@ -238,7 +242,7 @@ if args.filetype == 'bam':
     if args.stranded:
         print "Start reading bam file, this will take a while....."
         cvg_bam(bamfile)
-        peak = int(round((count_plus + count_minus)/6000000, 0))
+        peak = int(round((count_plus + count_minus)/6000000000, 0))
         cvg_plus.write_bedgraph_file( args.output + "_plus.bg" )
         cvg_minus.write_bedgraph_file( args.output + "_minus.bg" )
         print "Start applying Flanking Region Filter"
@@ -247,7 +251,7 @@ if args.filetype == 'bam':
     else:
         print "Start reading bam file, this will take a while....."
         cvg_bam_unstranded(bamfile)
-        peak = int(round(count/3000000, 0))
+        peak = int(round(count/3000000000, 0))
         cvg.write_bedgraph_file( args.output + ".bg" )
         print "Start applying Flanking Region Filter"
         frf_unstranded(annotation, peak)
