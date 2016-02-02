@@ -271,7 +271,7 @@ elif args.filetype == 'bg':
         bedgraph = args.coverage
         print "Start reading bedgraph file, this will take a while....."
         cvg_bedgraph_unstranded(bedgraph)
-        peak = int(round(count/3000000, 0))
+        peak = int(round(count/3000000000, 0))
         print "Start applying Flanking Region Filter"
         frf_unstranded(annotation, peak)
 
