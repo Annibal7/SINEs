@@ -3,10 +3,11 @@ from Bio.Emboss.Applications import NeedleCommandline
 from Bio import AlignIO
 from pybedtools import BedTool
 
-parser = argparse.ArgumentParser(description='This script takes a coverage file in BAM or BEDGRAPH format and an annotation file of SINEs in GTF format to find genuine SINE transcripts. Version 2.1.3 January 2016', epilog='Written by Davide Carnevali davide.carnevali@nemo.unipr.it')
+parser = argparse.ArgumentParser(description='This script takes a coverage file in BAM or BEDGRAPH format and an annotation file of SINEs in GTF format to find genuine SINE transcripts. Version 2.1.3b January 2016', epilog='Written by Davide Carnevali davide.carnevali@nemo.unipr.it')
 parser.add_argument("-s", "--stranded", help="Use this option if using a stranded coverage file(s). If using bam file make sure it is generated with TopHat as this program use the 'XS' tag to identify the strand of the transcript from which the reads come from", action="store_true")
-parser.add_argument("-t", "--filetype", choices=['bam', 'bg'], help="specify coverage file type: default 'bam'.  Bedgraph stranded files should be comma separated, with plus signal preceding the minus one", default='bam')
-parser.add_argument("-p", "--peak", type= int, help="Set how many times the SINE area coverage should be greater than background . Default: 1", default='1')
+parser.add_argument("-t", "--filetype", choices=['bam', 'bg'], help="specify coverage file type: default 'bam'.  Bedgraph stranded files should be comma separated, with plus signal preceding the minus one", default = 'bam')
+parser.add_argument("-bg", "--background", type= int, help="Set how many times the SINE area coverage should be greater than background . Default: 1", default='1')
+parser.add_argument("-r", "--ratio", type = float, help = "The ratio  left/central coverage area. Default: 0.5", default = '0.5')
 parser.add_argument("-LR", "--left_region", type = int, help = "Set the region size in nt", default='100')
 parser.add_argument("-RR", "--right_region", type = int, help = "Set the region size in nt", default='200')
 parser.add_argument("-OR", "--out_region", type = int, help = "Set the region size in nt", default='100')
@@ -99,7 +100,7 @@ def cvg_bedgraph_unstranded(file):
 def frf_stranded(gtf, peak):
     for element in gtf:
         if element.iv.strand == '+':
-            if sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak * ((element.iv.end - element.iv.start) * peak):
+            if sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.background * ((element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
@@ -134,7 +135,7 @@ def frf_stranded(gtf, peak):
             else:
                 continue
                 # TODO ----- add A-box, B- box and TTTT test with Pol3Scan
-        if left < (args.left_region * peak) and left < (central/aln_end)*args.left_region/2 and right < (central/aln_end)*args.right_region and out < (args.out_region*peak) and out < (central/aln_end)*args.out_region/2:
+        if left < (args.left_region * peak) and left < (central/aln_end)*args.left_region * args.ratio and right < (central/aln_end)*args.right_region and out < (args.out_region*peak) and out < (central/aln_end)*args.out_region * args.ratio:
             alu_list.append([peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
                 
 
@@ -142,7 +143,7 @@ def frf_stranded(gtf, peak):
 def frf_unstranded(gtf,peak):
     for element in gtf:
         if element.iv.strand == '+':
-            if sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.peak * ((element.iv.end - element.iv.start) * peak):
+            if sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.background * ((element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     max_coverage = max(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)]))
@@ -177,7 +178,7 @@ def frf_unstranded(gtf,peak):
             else:
                 continue
                 
-        if left < (args.left_region * peak) and left < (central/aln_end)*args.left_region/2 and right < (central/aln_end)*args.right_region and out < (args.out_region*peak) and out < (central/aln_end)*args.out_region/2:
+        if left < (args.left_region * peak) and left < (central/aln_end)*args.left_region * args.ratio and right < (central/aln_end)*args.right_region and out < (args.out_region*peak) and out < (central/aln_end)*args.out_region * args.ratio:
             alu_list.append([peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start, element.iv.end, element.iv.strand, left, central, right, out, left_max, max_coverage, right_max, out_max])
 
 # Perform global alignment, with Needle algorithm, of the element to its consensus sequence to define the start/end of the central region
@@ -265,7 +266,7 @@ elif args.filetype == 'bg':
         bedgraph = args.coverage
         print "Start reading bedgraph file, this will take a while....."
         cvg_bedgraph_unstranded(bedgraph)
-        peak = int(round(count/3000000, 0))
+        peak = int(round(count/3000000000, 0))
         print "Start applying Flanking Region Filter"
         frf_unstranded(annotation, peak)
 
