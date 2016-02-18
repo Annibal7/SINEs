@@ -3,7 +3,7 @@ from Bio.Emboss.Applications import NeedleCommandline
 from Bio import AlignIO
 from pybedtools import BedTool
 
-parser = argparse.ArgumentParser(description='This script takes a coverage file in BAM or BEDGRAPH format and an annotation file of SINEs in GTF format to find genuine SINE transcripts. Version 2.1.3b January 2016', epilog='Written by Davide Carnevali davide.carnevali@nemo.unipr.it')
+parser = argparse.ArgumentParser(description='This script takes a coverage file in BAM or BEDGRAPH format and an annotation file of SINEs in GTF format to find genuine SINE transcripts. Version 2.1.3c February 2016', epilog='Written by Davide Carnevali davide.carnevali@nemo.unipr.it')
 parser.add_argument("-s", "--stranded", help="Use this option if using a stranded coverage file(s). If using bam file make sure it is generated with TopHat as this program use the 'XS' tag to identify the strand of the transcript from which the reads come from", action="store_true")
 parser.add_argument("-t", "--filetype", choices=['bam', 'bg'], help="specify coverage file type: default 'bam'.  Bedgraph stranded files should be comma separated, with plus signal preceding the minus one", default = 'bam')
 parser.add_argument("-bg", "--background", type= int, help="Set how many times the SINE area coverage should be greater than background . Default: 1", default='1')
@@ -238,7 +238,7 @@ if args.filetype == 'bam':
     if args.stranded:
         print "Start reading bam file, this will take a while....."
         cvg_bam(bamfile)
-        peak = int(round((count_plus + count_minus)/6000000000, 0))
+        peak = int(round((count_plus + count_minus)/(6*10**9), 0))
         cvg_plus.write_bedgraph_file( args.output + "_plus.bg" )
         cvg_minus.write_bedgraph_file( args.output + "_minus.bg" )
         print "Start applying Flanking Region Filter"
@@ -247,7 +247,7 @@ if args.filetype == 'bam':
     else:
         print "Start reading bam file, this will take a while....."
         cvg_bam_unstranded(bamfile)
-        peak = int(round(count/3000000000, 0))
+        peak = int(round(count/(3*10**9), 0))
         cvg.write_bedgraph_file( args.output + ".bg" )
         print "Start applying Flanking Region Filter"
         frf_unstranded(annotation, peak)
@@ -258,7 +258,7 @@ elif args.filetype == 'bg':
         bedgraph_minus = args.coverage.strip().split(",")[1]
         print "Start reading bedgraph file, this will take a while....."
         cvg_bedgraph(bedgraph_plus, bedgraph_minus)
-        peak = int(round((count_plus + count_minus)/6000000000, 0))
+        peak = int(round((count_plus + count_minus)/(6*10**9), 0))
         print "Time elapsed %s" %(time.time() - start_time)
         print "Start applying Flanking Region Filter"
         frf_stranded(annotation, peak)
@@ -266,7 +266,7 @@ elif args.filetype == 'bg':
         bedgraph = args.coverage
         print "Start reading bedgraph file, this will take a while....."
         cvg_bedgraph_unstranded(bedgraph)
-        peak = int(round(count/3000000000, 0))
+        peak = int(round(count/(3*10**9), 0))
         print "Start applying Flanking Region Filter"
         frf_unstranded(annotation, peak)
 
