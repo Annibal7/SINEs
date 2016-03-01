@@ -115,7 +115,7 @@ def frf_stranded(gtf, peak):
                 continue
                     
         elif element.iv.strand == '-':
-            if sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > ((element.iv.end - element.iv.start) * peak):
+            if sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.background * ((element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     central = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - aln_end), (element.iv.end + aln_start))]))
@@ -154,7 +154,7 @@ def frf_unstranded(gtf,peak):
                 continue
                     
         elif element.iv.strand == '-':
-            if sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > ((element.iv.end - element.iv.start) * peak):
+            if sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start, element.iv.end)])) > args.background * ((element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end, element.attr['gene_id'], element.score, element.iv.strand)
                     central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start - aln_end), (element.iv.end + aln_start))]))
