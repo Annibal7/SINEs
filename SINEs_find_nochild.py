@@ -181,10 +181,8 @@ def frf_stranded(gtf, peak):
                 continue
                 # TODO ----- add A-box, B- box and TTTT test with Pol3Scan
         if args.ratio:
-            if left < (args.left_region * peak) and left < (
-                        central / aln_end) * args.left_region * args.ratio and right < (
-                        central / aln_end) * args.right_region and out < (args.out_region * peak) and out < (
-                        central / aln_end) * args.out_region * args.ratio:
+            if left < (central / aln_end) * args.left_region * args.ratio and right < (
+                        central / aln_end) * args.right_region and out < (central / aln_end) * args.out_region * args.ratio:
                 alu_list.append(
                     [peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start,
                      element.iv.end, element.iv.strand, left, central, right, out])
@@ -253,10 +251,8 @@ def frf_unstranded(gtf, peak):
                 continue
 
         if args.ratio:
-            if left < (args.left_region * peak) and left < (
-                        central / aln_end) * args.left_region * args.ratio and right < (
-                        central / aln_end) * args.right_region and out < (args.out_region * peak) and out < (
-                        central / aln_end) * args.out_region * args.ratio:
+            if left < (central / aln_end) * args.left_region * args.ratio and right < (
+                        central / aln_end) * args.right_region and out < (central / aln_end) * args.out_region * args.ratio:
                 alu_list.append(
                     [peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start,
                      element.iv.end, element.iv.strand, left, central, right, out])
