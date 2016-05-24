@@ -1,4 +1,5 @@
 import HTSeq
+import pyBigWig
 import argparse
 import csv
 import re
@@ -12,7 +13,7 @@ from pybedtools import BedTool
 
 parser = argparse.ArgumentParser(
     description = 'This script takes a coverage file in BAM or BEDGRAPH format and a SINE annotation file in GTF\
-    format to find genuine SINE transcripts. Version 2.1.4 February 2016',
+    format to find genuine SINE transcripts. Version 2.1.4b May 2016',
     epilog = 'Written by Davide Carnevali davide.carnevali@nemo.unipr.it')
 parser.add_argument("-s", "--stranded",
                     help="Use this option if using a stranded coverage file(s). If using bam file make sure it is\
@@ -101,12 +102,12 @@ def cvg_bedgraph(file_plus, file_minus):
         if 'chr' in line:
             chrom, start, end, value = line.strip().split("\t")
             cvg_plus[HTSeq.GenomicInterval(chrom, int(start), int(end))] = int(float(value))
-            count_plus += int(float(value))
+            count_plus += int(float(value))*(int(end) - int(start))
     for line in open(file_minus):
         if 'chr' in line:
             chrom, start, end, value = line.strip().split("\t")
             cvg_minus[HTSeq.GenomicInterval(chrom, int(start), int(end))] = int(float(value))
-            count_minus += int(float(value))
+            count_minus += int(float(value))*(int(end) - int(start))
     return (cvg_plus, cvg_minus, count_plus, count_minus)
 
 
@@ -116,7 +117,7 @@ def cvg_bedgraph_unstranded(file):
         if 'chr' in line:
             chrom, start, end, value = line.strip().split("\t")
             cvg[HTSeq.GenomicInterval(chrom, int(start), int(end))] = int(float(value))
-            count += int(float(value))
+            count += int(float(value))*(int(end) - int(start))
     return (cvg, count)
 
 
@@ -227,7 +228,7 @@ def frf_unstranded(gtf, peak):
                                                   element.iv.end)])) > args.background * (
                         (element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
-                    # TODO: perform global alignment ONLY if SINE length < full-length SINE
+                    # TODO: perform global alignment ONLY if annotated SINE length < full-length SINE
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end,
                                                 element.attr['gene_id'], element.score, element.iv.strand)
                     # TODO una volta ottenute le coordinate del full-length bisogna fare intersectBed unstranded con refseq/ensembl/lincRNA genes per verificare che la full-length non vada sopra a un trascritto noto

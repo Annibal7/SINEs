@@ -1,4 +1,5 @@
 import HTSeq
+import pyBigWig
 import argparse
 import csv
 import re
@@ -12,7 +13,7 @@ from pybedtools import BedTool
 
 parser = argparse.ArgumentParser(
     description = 'This script takes a coverage file in BAM or BEDGRAPH format and a SINE annotation file in GTF\
-    format to find genuine SINE transcripts. Version 2.1.4 February 2016',
+    format to find genuine SINE transcripts. Version 2.1.4b May 2016',
     epilog = 'Written by Davide Carnevali davide.carnevali@nemo.unipr.it')
 parser.add_argument("-s", "--stranded",
                     help="Use this option if using a stranded coverage file(s). If using bam file make sure it is\
@@ -28,9 +29,9 @@ parser.add_argument("-bg", "--background", type=int,
 parser.add_argument("-r", "--ratio", type=float, help="The ratio  left/central or out/central coverage area")
 parser.add_argument("-TSS", "--tss", type=int, help="Set the width of Transcription Start Site. Default: 50",
                     default='50')
-parser.add_argument("-LR", "--left_region", type=int, help="Set the region size in nt. Default", default='100')
-parser.add_argument("-RR", "--right_region", type=int, help="Set the region size in nt", default='200')
-parser.add_argument("-OR", "--out_region", type=int, help="Set the region size in nt", default='100')
+parser.add_argument("-LR", "--left_region", type=int, help="Set the region size in nt. Default: 100", default='100')
+parser.add_argument("-RR", "--right_region", type=int, help="Set the region size in nt. Default: 200", default='200')
+parser.add_argument("-OR", "--out_region", type=int, help="Set the region size in nt. Default: 100", default='100')
 parser.add_argument("coverage",
                     help="Coverage file to be processed, either in BAM or BEDGRAPH format. Using BEDGRAPH files the script run much faster (x10). If using BEDGRAPH make sure the coverage is made up only of uniquely mapped reads")
 parser.add_argument("gtf", help="annotation file in GFF/GTF format")
@@ -92,7 +93,7 @@ def cvg_bam_unstranded(file):
     return (cvg, count)
 
 
-# Build the coverage vectors for + and - strand based on bedgraph files   
+# Build the coverage vectors for + and - strand based on bedgraph files
 
 def cvg_bedgraph(file_plus, file_minus):
     global count_plus
@@ -101,12 +102,12 @@ def cvg_bedgraph(file_plus, file_minus):
         if 'chr' in line:
             chrom, start, end, value = line.strip().split("\t")
             cvg_plus[HTSeq.GenomicInterval(chrom, int(start), int(end))] = int(float(value))
-            count_plus += int(float(value))
+            count_plus += int(float(value))*(int(end) - int(start))
     for line in open(file_minus):
         if 'chr' in line:
             chrom, start, end, value = line.strip().split("\t")
             cvg_minus[HTSeq.GenomicInterval(chrom, int(start), int(end))] = int(float(value))
-            count_minus += int(float(value))
+            count_minus += int(float(value))*(int(end) - int(start))
     return (cvg_plus, cvg_minus, count_plus, count_minus)
 
 
@@ -116,7 +117,7 @@ def cvg_bedgraph_unstranded(file):
         if 'chr' in line:
             chrom, start, end, value = line.strip().split("\t")
             cvg[HTSeq.GenomicInterval(chrom, int(start), int(end))] = int(float(value))
-            count += int(float(value))
+            count += int(float(value))*(int(end) - int(start))
     return (cvg, count)
 
 
@@ -181,10 +182,8 @@ def frf_stranded(gtf, peak):
                 continue
                 # TODO ----- add A-box, B- box and TTTT test with Pol3Scan
         if args.ratio:
-            if left < (args.left_region * peak) and left < (
-                        central / aln_end) * args.left_region * args.ratio and right < (
-                        central / aln_end) * args.right_region and out < (args.out_region * peak) and out < (
-                        central / aln_end) * args.out_region * args.ratio:
+            if left < (central / aln_end) * args.left_region * args.ratio and right < (
+                        central / aln_end) * args.right_region and out < (central / aln_end) * args.out_region * args.ratio:
                 alu_list.append(
                     [peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start,
                      element.iv.end, element.iv.strand, left, central, right, out])
@@ -229,7 +228,7 @@ def frf_unstranded(gtf, peak):
                                                   element.iv.end)])) > args.background * (
                         (element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
-                    # TODO: perform global alignment ONLY if SINE length < full-length SINE
+                    # TODO: perform global alignment ONLY if annotated SINE length < full-length SINE
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end,
                                                 element.attr['gene_id'], element.score, element.iv.strand)
                     # TODO una volta ottenute le coordinate del full-length bisogna fare intersectBed unstranded con refseq/ensembl/lincRNA genes per verificare che la full-length non vada sopra a un trascritto noto
@@ -253,10 +252,8 @@ def frf_unstranded(gtf, peak):
                 continue
 
         if args.ratio:
-            if left < (args.left_region * peak) and left < (
-                        central / aln_end) * args.left_region * args.ratio and right < (
-                        central / aln_end) * args.right_region and out < (args.out_region * peak) and out < (
-                        central / aln_end) * args.out_region * args.ratio:
+            if left < (central / aln_end) * args.left_region * args.ratio and right < (
+                        central / aln_end) * args.right_region and out < (central / aln_end) * args.out_region * args.ratio:
                 alu_list.append(
                     [peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start,
                      element.iv.end, element.iv.strand, left, central, right, out])
@@ -265,7 +262,6 @@ def frf_unstranded(gtf, peak):
                 alu_list.append(
                     [peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start,
                      element.iv.end, element.iv.strand, left, central, right, out])
-
 
 # Perform global alignment, with Needle algorithm, of the element to its consensus sequence to define the start/end of the central region
 
