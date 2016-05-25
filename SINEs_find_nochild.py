@@ -33,7 +33,7 @@ parser.add_argument("-LR", "--left_region", type=int, help="Set the region size 
 parser.add_argument("-RR", "--right_region", type=int, help="Set the region size in nt. Default: 200", default='200')
 parser.add_argument("-OR", "--out_region", type=int, help="Set the region size in nt. Default: 100", default='100')
 parser.add_argument("coverage",
-                    help="Coverage file to be processed, either in BAM or BEDGRAPH format. Using BEDGRAPH files the script run much faster (x10). If using BEDGRAPH make sure the coverage is made up only of uniquely mapped reads")
+                    help="Coverage file to be processed, either in BAM or BigWig format. Using BigWig files the script run much faster (x10). If using BigWig make sure the coverage is made up only of uniquely mapped reads")
 parser.add_argument("gtf", help="annotation file in GFF/GTF format")
 parser.add_argument("genome", help="reference genome in fasta format")
 parser.add_argument("output", help="output filename")
