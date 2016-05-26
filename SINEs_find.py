@@ -338,21 +338,17 @@ if args.filetype == 'bam':
         print "Start applying Flanking Region Filter"
         frf_unstranded(annotation, peak)
 
-elif args.filetype == 'bg':
+elif args.filetype == 'bw':
     if args.stranded:
-        bedgraph_plus = args.coverage.strip().split(",")[0]
-        bedgraph_minus = args.coverage.strip().split(",")[1]
-        print "Start reading bedgraph file, this will take a while....."
-        cvg_bedgraph(bedgraph_plus, bedgraph_minus)
-        peak = int(round((count_plus + count_minus) / (6 * 10 ** 9), 0))
-        print "Time elapsed %s" % (time.time() - start_time)
+        bw_plus = pyBigWig.open(args.coverage.strip().split(",")[0])
+        bw_minus = pyBigWig.open(args.coverage.strip().split(",")[1])
+        peak = int(round((bw_plus.header()["sumData"]) +(bw_minus.header()["sumData"])) /
+                   ((bw_plus.header()["nBasesCovered"]) +(bw_minus.header()["nBasesCovered"])))
         print "Start applying Flanking Region Filter"
         frf_stranded(annotation, peak)
     else:
-        bedgraph = args.coverage
-        print "Start reading bedgraph file, this will take a while....."
-        cvg_bedgraph_unstranded(bedgraph)
-        peak = int(round(count / (3 * 10 ** 9), 0))
+        bw = pyBigWig.open(args.coverage)
+        peak = int(round(bw.header()["sumData"] / bw.header()["nBasesCovered"]))
         print "Start applying Flanking Region Filter"
         frf_unstranded(annotation, peak)
 
