@@ -13,7 +13,7 @@ from pybedtools import BedTool
 
 parser = argparse.ArgumentParser(
     description = 'This script takes a coverage file in BAM or BEDGRAPH format and a SINE annotation file in GTF\
-    format to find genuine SINE transcripts. Version 2.1.5 May 2016',
+    format to find genuine SINE transcripts. Version 2.1.6 July 2016',
     epilog = 'Written by Davide Carnevali davide.carnevali@nemo.unipr.it')
 parser.add_argument("-s", "--stranded",
                     help="Use this option if using a stranded coverage file(s). If using bam file make sure it is\
@@ -21,7 +21,7 @@ parser.add_argument("-s", "--stranded",
                     from which the reads come from",
                     action="store_true")
 parser.add_argument("-t", "--filetype", choices=['bam', 'bw'],
-                    help="specify coverage file type: default 'bam'.  Bedgraph stranded files should be comma separated, with plus signal preceding the minus one",
+                    help="specify coverage file type: default 'bam'.  BigWig stranded files should be comma separated, with plus signal preceding the minus one",
                     default='bam')
 parser.add_argument("-bg", "--background", type=int,
                     help="Set how many times the SINE area coverage should be greater than background . Default: 1",
@@ -79,7 +79,7 @@ def cvg_bam(file):
                     if cigopt.type == 'M':
                         cvg_minus[cigopt.ref_iv] += 1
                         count_minus += cigopt.ref_iv.length
-    return (cvg_plus, cvg_minus, count_plus, count_minus)
+    return cvg_plus, cvg_minus, count_plus, count_minus
 
 
 def cvg_bam_unstranded(file):
@@ -90,35 +90,7 @@ def cvg_bam_unstranded(file):
                 if cigopt.type == 'M':
                     cvg[cigopt.ref_iv] += 1
                     count += cigopt.ref_iv.length
-    return (cvg, count)
-
-
-# Build the coverage vectors for + and - strand based on bedgraph files
-
-def cvg_bedgraph(file_plus, file_minus):
-    global count_plus
-    global count_minus
-    for line in open(file_plus):
-        if 'chr' in line:
-            chrom, start, end, value = line.strip().split("\t")
-            cvg_plus[HTSeq.GenomicInterval(chrom, int(start), int(end))] = int(float(value))
-            count_plus += int(float(value))*(int(end) - int(start))
-    for line in open(file_minus):
-        if 'chr' in line:
-            chrom, start, end, value = line.strip().split("\t")
-            cvg_minus[HTSeq.GenomicInterval(chrom, int(start), int(end))] = int(float(value))
-            count_minus += int(float(value))*(int(end) - int(start))
-    return (cvg_plus, cvg_minus, count_plus, count_minus)
-
-
-def cvg_bedgraph_unstranded(file):
-    global count
-    for line in open(file):
-        if 'chr' in line:
-            chrom, start, end, value = line.strip().split("\t")
-            cvg[HTSeq.GenomicInterval(chrom, int(start), int(end))] = int(float(value))
-            count += int(float(value))*(int(end) - int(start))
-    return (cvg, count)
+    return cvg, count
 
 
 # Calculate coverage in the Left/Center/Right arm of the SINEs
@@ -129,10 +101,8 @@ def frf_stranded(gtf, peak):
             if sum(bw_plus.values(element.iv.chrom, element.iv.start,element.iv.end)) > args.background * (
                         (element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
-                    # TODO: perform global alignment ONLY if SINE length < full-length SINE
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end,
                                                 element.attr['gene_id'], element.score, element.iv.strand)
-                    # TODO una volta ottenute le coordinate del full-length bisogna fare intersectBed stranded con refseq/ensembl/lincRNA genes per verificare che la full-length non vada sopra a un trascritto noto
                     central = int(sum(bw_plus.values(element.iv.chrom, (element.iv.start - aln_start),
                                                                       (element.iv.start - aln_start + aln_end))))
                     right = int(sum(bw_plus.values(element.iv.chrom,(element.iv.start - aln_start + aln_end), (
@@ -152,10 +122,8 @@ def frf_stranded(gtf, peak):
             if sum(bw_minus.values(element.iv.chrom, element.iv.start, element.iv.end)) > args.background * (
                         (element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
-                    # TODO: perform global alignment ONLY if SINE length < full-length SINE
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end,
                                                 element.attr['gene_id'], element.score, element.iv.strand)
-                    # TODO una volta ottenute le coordinate del full-length bisogna fare intersectBed stranded con refseq/ensembl/lincRNA genes per verificare che la full-length non vada sopra a un trascritto noto
                     central = int(sum(bw_minus.values(element.iv.chrom,(element.iv.end + aln_start - aln_end),
                                                                        (element.iv.end + aln_start))))
                     right = int(sum(bw_minus.values(element.iv.chrom, (element.iv.end + aln_start - (aln_end + args.right_region)),
@@ -169,7 +137,6 @@ def frf_stranded(gtf, peak):
                     continue
             else:
                 continue
-                # TODO ----- add A-box, B- box and TTTT test with Pol3Scan
         if args.ratio:
             if left < (central / aln_end) * args.left_region * args.ratio and right < (
                         central / aln_end) * args.right_region and out < (central / aln_end) * args.out_region * args.ratio:
@@ -190,10 +157,8 @@ def frf_unstranded(gtf, peak):
                                                   element.iv.end)) > args.background * (
                         (element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
-                    # TODO: perform global alignment ONLY if SINE length < full-length SINE
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end,
                                                 element.attr['gene_id'], element.score, element.iv.strand)
-                    # TODO una volta ottenute le coordinate del full-length bisogna fare intersectBed unstranded con refseq/ensembl/lincRNA genes per verificare che la full-length non vada sopra a un trascritto noto
                     central = int(sum(bw.values(element.iv.chrom, (element.iv.start - aln_start),
                                                                  (element.iv.start - aln_start + aln_end))))
                     right = int(sum(bw.values(element.iv.chrom,(element.iv.start - aln_start + aln_end),(
@@ -216,10 +181,8 @@ def frf_unstranded(gtf, peak):
                                                   element.iv.end)) > args.background * (
                         (element.iv.end - element.iv.start) * peak):
                 if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
-                    # TODO: perform global alignment ONLY if annotated SINE length < full-length SINE
                     aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end,
                                                 element.attr['gene_id'], element.score, element.iv.strand)
-                    # TODO una volta ottenute le coordinate del full-length bisogna fare intersectBed unstranded con refseq/ensembl/lincRNA genes per verificare che la full-length non vada sopra a un trascritto noto
                     central = int(sum(bw.values(element.iv.chrom,
                                                                  (element.iv.end + aln_start - aln_end),
                                                                  (element.iv.end + aln_start))))
@@ -233,6 +196,138 @@ def frf_unstranded(gtf, peak):
                         element.iv.end + aln_start - (aln_end + args.right_region + args.out_region)), (
                                                                  element.iv.end + aln_start - (
                                                                      aln_end + args.out_region)))))
+
+                else:
+                    continue
+            else:
+                continue
+
+        if args.ratio:
+            if left < (central / aln_end) * args.left_region * args.ratio and right < (
+                        central / aln_end) * args.right_region and out < (central / aln_end) * args.out_region * args.ratio:
+                alu_list.append(
+                    [peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start,
+                     element.iv.end, element.iv.strand, left, central, right, out])
+        else:
+            if left == 0 and right < (central / aln_end) * args.right_region and out == 0:
+                alu_list.append(
+                    [peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start,
+                     element.iv.end, element.iv.strand, left, central, right, out])
+
+
+def frf_stranded_bam(gtf, peak):
+    for element in gtf:
+        if element.iv.strand == '+':
+            if sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start,
+                                                       element.iv.end)])) > args.background * (
+                        (element.iv.end - element.iv.start) * peak):
+                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
+                    aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end,
+                                                element.attr['gene_id'], element.score, element.iv.strand)
+                    central = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start),
+                                                                      (element.iv.start - aln_start + aln_end))]))
+                    right = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom,
+                                                                    (element.iv.start - aln_start + aln_end), (
+                                                                        element.iv.start - aln_start + (
+                                                                            aln_end + args.right_region)))]))
+                    left = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (
+                        element.iv.start - (aln_start + args.tss + args.left_region)),
+                                                                   (element.iv.start - aln_start - args.tss))]))
+                    out = sum(list(cvg_plus[HTSeq.GenomicInterval(element.iv.chrom, (
+                        element.iv.start - aln_start + (aln_end + args.right_region)), (element.iv.start - aln_start + (
+                        aln_end + args.right_region + args.out_region)))]))
+
+                else:
+                    continue
+            else:
+                continue
+
+        elif element.iv.strand == '-':
+            if sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start,
+                                                        element.iv.end)])) > args.background * (
+                        (element.iv.end - element.iv.start) * peak):
+                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
+                    aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end,
+                                                element.attr['gene_id'], element.score, element.iv.strand)
+                    central = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom,
+                                                                       (element.iv.end + aln_start - aln_end),
+                                                                       (element.iv.end + aln_start))]))
+                    right = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (
+                        element.iv.end + aln_start - (aln_end + args.right_region)),
+                                                                     (element.iv.end + aln_start - aln_end))]))
+                    left = sum(list(cvg_minus[
+                                        HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start + args.tss),
+                                                              (
+                                                                  element.iv.end + aln_start + args.tss + args.left_region))]))
+                    out = sum(list(cvg_minus[HTSeq.GenomicInterval(element.iv.chrom, (
+                        element.iv.end + aln_start - (aln_end + args.right_region + args.out_region)), (
+                                                                       element.iv.end + aln_start - (
+                                                                           aln_end + args.out_region)))]))
+
+                else:
+                    continue
+            else:
+                continue
+        if args.ratio:
+            if left < (central / aln_end) * args.left_region * args.ratio and right < (
+                        central / aln_end) * args.right_region and out < (central / aln_end) * args.out_region * args.ratio:
+                alu_list.append(
+                    [peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start,
+                     element.iv.end, element.iv.strand, left, central, right, out])
+        else:
+            if left == 0 and right < (central / aln_end) * args.right_region and out == 0:
+                alu_list.append(
+                    [peak, aln_start, aln_end, element.attr['transcript_id'], element.iv.chrom, element.iv.start,
+                     element.iv.end, element.iv.strand, left, central, right, out])
+
+
+def frf_unstranded_bam(gtf, peak):
+    for element in gtf:
+        if element.iv.strand == '+':
+            if sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start,
+                                                  element.iv.end)])) > args.background * (
+                        (element.iv.end - element.iv.start) * peak):
+                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
+                    aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end,
+                                                element.attr['gene_id'], element.score, element.iv.strand)
+                    central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.start - aln_start),
+                                                                 (element.iv.start - aln_start + aln_end))]))
+                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom,
+                                                               (element.iv.start - aln_start + aln_end), (
+                                                                   element.iv.start - aln_start + (
+                                                                       aln_end + args.right_region)))]))
+                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (
+                        element.iv.start - (aln_start + args.tss + args.left_region)),
+                                                              (element.iv.start - aln_start - args.tss))]))
+                    out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (
+                        element.iv.start - aln_start + (aln_end + args.right_region)), (element.iv.start - aln_start + (
+                        aln_end + args.right_region + args.out_region)))]))
+
+                else:
+                    continue
+            else:
+                continue
+
+        elif element.iv.strand == '-':
+            if sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, element.iv.start,
+                                                  element.iv.end)])) > args.background * (
+                        (element.iv.end - element.iv.start) * peak):
+                if "MIR" in element.attr['gene_id'] or "Alu" in element.attr['gene_id']:
+                    aln_start, aln_end = needle(element.iv.chrom, element.iv.start, element.iv.end,
+                                                element.attr['gene_id'], element.score, element.iv.strand)
+                    central = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom,
+                                                                 (element.iv.end + aln_start - aln_end),
+                                                                 (element.iv.end + aln_start))]))
+                    right = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (
+                        element.iv.end + aln_start - (aln_end + args.right_region)),
+                                                               (element.iv.end + aln_start - aln_end))]))
+                    left = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (element.iv.end + aln_start + args.tss),
+                                                              (
+                                                                  element.iv.end + aln_start + args.tss + args.left_region))]))
+                    out = sum(list(cvg[HTSeq.GenomicInterval(element.iv.chrom, (
+                        element.iv.end + aln_start - (aln_end + args.right_region + args.out_region)), (
+                                                                 element.iv.end + aln_start - (
+                                                                     aln_end + args.out_region)))]))
 
                 else:
                     continue
@@ -314,7 +409,7 @@ def needle(chrom, start, end, name, score, strand):
         aln_start = char.search(str(align[1, :].seq)).end()
         aln_end = char2.search(str(align[1, :].seq)).end()
 
-    return (aln_start, aln_end)
+    return aln_start, aln_end
 
 
 # Check srguments and call specific functions
@@ -328,31 +423,30 @@ if args.filetype == 'bam':
         cvg_plus.write_bedgraph_file(args.output + "_plus.bg")
         cvg_minus.write_bedgraph_file(args.output + "_minus.bg")
         print "Start applying Flanking Region Filter"
-        frf_stranded(annotation, peak)
+        frf_stranded_bam(annotation, peak)
 
     else:
         print "Start reading bam file, this will take a while....."
         cvg_bam_unstranded(bamfile)
-        peak = int(round(count / (3 * 10 ** 9), 0))
+        peak = int(round(count / (6 * 10 ** 9), 0))
         cvg.write_bedgraph_file(args.output + ".bg")
         print "Start applying Flanking Region Filter"
-        frf_unstranded(annotation, peak)
+        frf_unstranded_bam(annotation, peak)
 
 elif args.filetype == 'bw':
     if args.stranded:
         bw_plus = pyBigWig.open(args.coverage.strip().split(",")[0])
         bw_minus = pyBigWig.open(args.coverage.strip().split(",")[1])
-        peak = int(round((bw_plus.header()["sumData"]) +(bw_minus.header()["sumData"])) /
-                   ((bw_plus.header()["nBasesCovered"]) +(bw_minus.header()["nBasesCovered"])))
+        peak = int(round((bw_plus.header()["sumData"] + bw_minus.header()["sumData"])/ (6 * 10 ** 9)))
         print "Start applying Flanking Region Filter"
         frf_stranded(annotation, peak)
     else:
         bw = pyBigWig.open(args.coverage)
-        peak = int(round(bw.header()["sumData"] / bw.header()["nBasesCovered"]))
+        peak = int(round(bw.header()["sumData"] / (6  * 10 ** 9)))
         print "Start applying Flanking Region Filter"
         frf_unstranded(annotation, peak)
 
-# Write to output the Bona Fide Alus
+# Write to output the Bona Fide SINEs
 
 with open(args.output, 'wb') as f:
     writer = csv.writer(f, delimiter='\t')
